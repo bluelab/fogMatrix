@@ -15,28 +15,33 @@ byte max5 = 0x14;
 byte max6 = 0x15;
 byte max7 = 0x16;
 
-int intensita = 0xff;    
-int LEDSarray[16];//numers of LED arrays = controller boards
+int intensita = 0xff;   
 
-int  LEDSON[16]; //array for all on 
-int  LEDSOFF[16]; //array for all off 
-int  LEDSLETTER[16]; //array for all off 
-  
+#define BOXNUM 18  //number of boxes 16
+
+int LEDSarray[BOXNUM];//numers of LED arrays = controller boards
+
+int  LEDSON[BOXNUM]; //array for all on 
+int  LEDSOFF[BOXNUM]; //array for all off 
+int  LEDSLETTER[BOXNUM]; //array for all off 
+
 //front 8 6 4 
-int LEDSFRONT[16];
+int LEDSFRONT[BOXNUM];
 
 //back 1 2 3 5 7 9
-int LEDSBACK[16];
+int LEDSBACK[BOXNUM];
+int LEDS16[BOXNUM];
+int LEDS712[BOXNUM];
+int LEDS1318[BOXNUM];
 
 //2DO transform into array for multi max 
-byte LEDSstatus[16]; //current machine status first 8 values correnspond to the 16 fog rings - second  8 to the motors
-int BOXNUM=16; //number of boxes 16
+byte LEDSstatus[BOXNUM]; //current machine status first 8 values correnspond to the 16 fog rings - second  8 to the motors
 
 //byte chipdata = 0;
 
 ///debug vars
-int debugT=00, Tdelay=50; //set debugT to 0 when not debuggin
-int Tcharge=1000, Tshot=100; 
+int debugT=00, Tdelay=250; //set debugT to 0 when not debuggin
+int Tcharge=1000, Tshot=300; 
 ////
 boolean LED13=false;
 ////
@@ -65,8 +70,15 @@ void setup(){
   for(int i=0;i<BOXNUM;i++){
     LEDSarray[i]=0x00;
     LEDSstatus[i]=0x00;
+    LEDS16[i]=0x00;
+    LEDS712[i]=0x00;
+    LEDS1318[i]=0x00;
   }
-
+  for(int i=0;i<6;i++){
+    LEDS16[remap(i+1)-1]=1;
+    LEDS712[remap(i+1+6)-1]=1;
+    LEDS1318[remap(i+1+12)-1]=1;
+  }
   for(int i=0;i<BOXNUM;i++){
     LEDSON[i]=1;
     LEDSOFF[i]=0;
@@ -104,14 +116,65 @@ void loop()
   delay(1000);
   int input = Serial.read();  // read serial 
   int T=150; //ms
-  switch (input){
-////////////////////////
+  
+  
+////receiving from processing  
+  bool started, ended;
+  int serialIn=0;
+  byte YuanBuffer[18];
+  int shotbuf[18];
+  
+   while(Serial.available() > 0)
+
+////////////////////////from processing use something like:
 //    myPort.write("<");
 //    myPort.write(val);
 //    myPort.write(">");
-////////////////////////
+////////////////////////  to send the array
+
+   {
+//      char aChar = Serial.read();
+      byte aChar = Serial.read();
+     // if(aChar == '<')
+      if(aChar == 0x3C)
+      {
+         started = true;
+         ended = false;
+      }
+   //   else if(aChar == '>')
+      else if(aChar == 0x3E )
+      {
+         ended = true;
+         break; // Break out of the while loop
+      }
+      else
+      {
+         YuanBuffer[serialIn] = aChar; 
+         serialIn++;
+//         YuanBuffer[serialIn] = '\0'; //a string is a char terminated by \0 so take care if you use a char
+      }
+   }
+
+   if(started && ended)
+   {
+      // We got a whole slice
+      for(int i=1;i<BOXNUM;i++){
+         shotbuf[i-1]=(int)YuanBuffer[i]; //casting
+        }
+      shot(shotbuf);
     
-    
+        // Do something else ??? :o
+      serialIn = 0;
+      started = false;
+      ended = false;
+   }
+   else
+   {
+     // No data, or only some data, received what do we do ?
+   }
+  
+  
+  switch (input){
   case 1:  //If processing passes a '1' do case one 
     //shotSingle(1);
     //LED13!=LED13; // set the LED 
@@ -164,16 +227,12 @@ void loop()
 
     break;
   case 4:         
-    shotBack();  
     LED13!=LED13; // set the LED  
     break;
   case 5:         
-    shotFront();
     LED13!=LED13; // set the LED
     break;
   }
-  
-
 }
 
 ////////////////////////////////////////////////////////////////////////
