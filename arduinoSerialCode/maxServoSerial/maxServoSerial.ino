@@ -1,19 +1,5 @@
-//NB 
-//SERVE V status nel quale deve esserci sempre lo stato della macchina ? 
-//ogni fire in realta' ha una pausa quindi stato e' sempre 0
-//2DO keep track of addresses in glob vars e usare OR AND
-
-// alloff necessita di una pausa 
-// serve F che prenda vettore di numeri e spari tutti i num 
-// capire che cazzo non funzionava oggi
-//2 DO / loop on board config 
-
 //Alex Barchiesi for fog rings project 
-
-//2DO / address matrix loop board - led 
-
 // based partially on the code for max7313 by  eric toering
-
 // Using the Wire library (created by Nicholas Zambetti)
 // On the Arduino board, Analog In 4 is SDA, Analog In 5 is SCL
 
@@ -110,54 +96,12 @@ void setup(){
 
 void loop()
 {
-
-  /*  small routine for finding out how the addresss pins are connected
-   for (int i = 0; i < 255; i++){
-   max1 = i;
-   
-   postino(max1, 0xf, 0x10);                  
-   postino(max1, 0x6, 0x00);                  
-   postino(max1, 0x7, 0x00);                  
-   postino(max1, 0x2, 0xff);                  
-   postino(max1, 0x3, 0xff);
-   postino(max1, 0xe, 0xff);            
-   postino(max1, 0x10, 0x00); 
-   postino(max1, 0x11, 0x00); 
-   postino(max1, 0x12, 0x00); 
-   postino(max1, 0x13, 0x00); 
-   postino(max1, 0x14, 0x00); 
-   postino(max1, 0x15, 0x00); 
-   postino(max1, 0x16, 0x00); 
-   postino(max1, 0x17, 0x00); 
-   Serial.println(i, DEC);
-   delay (5);
-   }
-   
-   for (int i = 0; i < 255; i++){
-   max1 = i;
-   postino(max1, 0xf, 0x10);                  
-   postino(max1, 0x6, 0x00);                  
-   postino(max1, 0x7, 0x00);                  
-   postino(max1, 0x2, 0xff);                   
-   postino(max1, 0x3, 0xff);
-   postino(max1, 0xe, 0xff);                  
-   postino(max1, 0x10, 0xff); 
-   postino(max1, 0x11, 0xff);
-   postino(max1, 0x12, 0xff); 
-   postino(max1, 0x13, 0xff); 
-   postino(max1, 0x14, 0xff); 
-   postino(max1, 0x15, 0xff); 
-   postino(max1, 0x16, 0xff); 
-   postino(max1, 0x17, 0xff); 
-   Serial.println(i, DEC);
-   delay (5);
-   }
-   
-   */
   allOff();
   delay(100);
   ///////
   //shotAll();  
+  sinlab();
+  delay(1000);
   int input = Serial.read();  // read serial 
   int T=150; //ms
   switch (input){
@@ -222,64 +166,6 @@ void loop()
     break;
   }
 
-  /*   ////intesity loop for future devel (ring different power)
-   
-   for (int x = 0; x< 5; x++){
-   while (intensita > 0){
-   
-   for (int i = 0x10; i < 0x18; i++){
-   postino(max1, i, intensita); 
-   postino(max2, i, intensita);
-   }
-   
-   delay(40+debugT);
-   
-   intensita -= 0x11;
-   
-   }
-   
-   while (intensita  < 0xff){
-   for (int i = 0x10; i < 0x18; i++){
-   postino(max1, i, intensita); 
-   postino(max2, i, intensita); 
-   }
-   
-   delay(60+debugT);
-   
-   intensita += 0x11; 
-   }  
-   
-   } 
-   
-   
-   for (int i = BOXNUM; i > 0; i--){
-   if ((i % 2)>0){ 
-   postino(max2, (0x10+(i / 2)), 0x0F); 
-   }
-   else { 
-   postino(max2, (0x10+(i / 2)), 0xF0);
-   }
-   delay(50+debugT);
-   postino(max2, (0x10+(i / 2)), 0xFF);
-   }
-   
-   for (int i = 0; i < BOXNUM; i++){
-   if ((i % 2)>0){ 
-   postino(max1, (0x10+(i / 2)), 0x0F); 
-   delay(debugT);    
-   Serial.println(i);
-   }
-   else { 
-   postino(max1, (0x10+(i / 2)), 0xF0);
-   delay(debugT); 
-   Serial.println(i);
-   }
-   delay(80+debugT);
-   postino(max1, (0x10+(i / 2)), 0xFF);
-   }
-   /////
-   
-   */
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -329,16 +215,29 @@ void shotpriv(int i, int j){
   else if(j==1) shotFire(i);
 }
 
-void shotFire(int i){  
+void shotFire(int i){    //i always > 0
   if ((i % 2)>0){ //numeri dispari
     LEDSstatus[(i-1)/2] = (LEDSstatus[(i-1)/2]  & 0xF0) +0x0F; //1,3,5,7,9... // &0xF0 masks higher bit 
-    postino(max2, (0x10+(i-1)/2), LEDSstatus[(i-1)/2]); 
-    //  postino(max2, (0x10+(i-1)/2), ((0x00 & 0xF0)+0x0F)); 
+    if(i>=12){
+      postino(max1, (0x10+(i-1-12)/2), LEDSstatus[(i-1-12)/2]);
+
+    }
+    else  {
+      postino(max2, (0x10+(i-1)/2), LEDSstatus[(i-1)/2]); 
+      //  postino(max2, (0x10+(i-1)/2), ((0x00 & 0xF0)+0x0F)); 
+    }
+
   }
-  else { //numeri pari e 0
-    LEDSstatus[(i-1)/2] = (LEDSstatus[(i-1)/2]  & 0x0F) +0xF0;//0,2,4,6,8... // &0x0F masks lower bit
-    postino(max2, (0x10+(i-1)/2), LEDSstatus[(i-1)/2]);
+  else { //numeri pari 
     // postino(max2, (0x10+(i-1)/2), ((0x00 & 0x0F)+0xF0)); 
+    LEDSstatus[(i-1)/2] = (LEDSstatus[(i-1)/2]  & 0x0F) +0xF0;//0,2,4,6,8... // &0x0F masks lower bit
+    if(i>=12){
+            postino(max2, (0x10+(i-1-12)/2), LEDSstatus[(i-1-12)/2]);
+
+    }
+    else{
+      postino(max1, (0x10+(i-1)/2), LEDSstatus[(i-1)/2]);
+    }
   }
 }
 
@@ -360,11 +259,11 @@ void shotOff(int i){
 // array contains 0=off 1=on
 void shot(int *array){
   for (int j=0; j<BOXNUM; j++) {
-    shotpriv(j,array[j]);
+    shotpriv(j+1,array[j]);
   }
   delay(Tshot);
   for (int j=0; j<BOXNUM; j++) {
-    shotpriv(j,0);
+    shotpriv(j+1,0);
   }
   delay(Tshot); //dovrebbe essere Tcharge
 }
@@ -372,10 +271,9 @@ void shot(int *array){
 void shotSingle(int i){
   int SINGLELED[BOXNUM];
   for(int h=0; h<BOXNUM; h++){  
-    //    SINGLELED[h]=LEDSOFF[h];
     SINGLELED[h]=0;
   }
-  SINGLELED[i]=1;
+  SINGLELED[i-1]=1;
   shot(SINGLELED);
 }
 
@@ -417,31 +315,31 @@ void ramp(int T){
   }
 };
 
-void shotFront(){ 
-  shot(LEDSFRONT);
-}
-void shotBack(){ 
-  shot(LEDSBACK);
-}
-
 //
-
 void s(){
-  //back 1 2 3 5 7 9
-  //LEDSBACK
-  shot(LEDSBACK);
-  for(int h=0;h<3;h++) shotSingle(1);
-  shot(LEDSBACK);
-  for(int h=0;h<3;h++) shotSingle(9);
-  shot(LEDSBACK);
+  // 1 2 3 4 5 6
+  shot(LEDS16);
+  for(int h=0;h<3;h++) {
+    shotSingle(remap(6)-1); 
+  }
+  shot(LEDS16);  
+  for(int h=0;h<3;h++){
+    shotSingle(remap(1)-1);
+  }  
+  shot(LEDS16);   
+  shot(LEDS16);   
+  for(int h=0;h<3;h++) {
+    shotSingle(remap(1)-1);
+  }
+  shot(LEDS16);   
 };
 
 void i(){
   for(int i=0;i<BOXNUM;i++){
     LEDSLETTER[i]=0;
   }
-  LEDSLETTER[3]=1;
-  LEDSLETTER[5]=1;
+  LEDSLETTER[remap(3)-1]=1;
+  LEDSLETTER[remap(4)-1]=1;
   for(int h=0;h<7;h++)  shot(LEDSLETTER);
 };
 
@@ -449,39 +347,36 @@ void n(){
   for(int i=0;i<BOXNUM;i++){
     LEDSLETTER[i]=0;
   }
-  LEDSLETTER[1]=1;
-  LEDSLETTER[9]=1;
+  LEDSLETTER[remap(1)-1]=1;
+  LEDSLETTER[remap(6)-1]=1;
   shot(LEDSLETTER);
-  LEDSLETTER[7]=1;
+  LEDSLETTER[remap(2)-1]=1;
   shot(LEDSLETTER);
-  LEDSLETTER[7]=0;
-  LEDSLETTER[5]=1;
+  LEDSLETTER[remap(2)-1]=0;
+  LEDSLETTER[remap(3)-1]=1;
   shot(LEDSLETTER);
-  LEDSLETTER[5]=0;
-  LEDSLETTER[3]=1;
+  LEDSLETTER[remap(3)-1]=0;
+  LEDSLETTER[remap(4)-1]=1;
   shot(LEDSLETTER);
-  LEDSLETTER[3]=0;
-  LEDSLETTER[2]=1;
-  shot(LEDSLETTER);
-  LEDSLETTER[2]=0;
-  LEDSLETTER[1]=1;
+  LEDSLETTER[remap(4)-1]=0;
+  LEDSLETTER[remap(5)-1]=1;
   shot(LEDSLETTER);
 };
 
 void l(){
-  for(int h=0;h<6;h++) shotSingle(9);
-  shot(LEDSBACK);
+  for(int h=0;h<6;h++) shotSingle(remap(6)-1);
+  shot(LEDS16);
 };
 
 void a(){
   for(int i=0;i<BOXNUM;i++){
     LEDSLETTER[i]=0;
   }
-  LEDSLETTER[1]=1;
-  LEDSLETTER[9]=1;
-  shot(LEDSBACK);  
+  LEDSLETTER[remap(1)-1]=1;
+  LEDSLETTER[remap(6)-1]=1;
+  shot(LEDS16);  
   shot(LEDSLETTER);
-  shot(LEDSBACK);  
+  shot(LEDS16);  
   shot(LEDSLETTER);
   shot(LEDSLETTER);
   shot(LEDSLETTER);
@@ -492,334 +387,46 @@ void b(){
   for(int i=0;i<BOXNUM;i++){
     LEDSLETTER[i]=0;
   }
-  LEDSLETTER[1]=1;
-  LEDSLETTER[9]=1;
-  shot(LEDSBACK);  
+  LEDSLETTER[remap(1)-1]=1;
+  LEDSLETTER[remap(6)-1]=1;
+  shot(LEDS16);  
   shot(LEDSLETTER);
   shot(LEDSLETTER);
-  shot(LEDSBACK);  
+  shot(LEDS16);  
   shot(LEDSLETTER);
   shot(LEDSLETTER);
-  shot(LEDSBACK); 
+  shot(LEDS16); 
 };
-/*
- void x{
- };
- void e{
- };
- 
- void y{
- };
- void u{
- };
- 
- //in fila
- void sinlab(){
- 
- //S
- for(int i=1;i<6;i++){
- postino(max2, (0x10+(i-1)/2), 0xFF); //
- }
- delay(2*Tshot);
- allOff();
- delay(2*Tshot);
- for(int c=0;c<5;c++){
- shotSingle(6);
- delay(5*Tshot);
- }
- allOff();
- delay(Tshot);
- 
- for(int i=1;i<6;i++){
- postino(max2, (0x10+(i-1)/2), 0xFF); //
- }
- delay(2*Tshot);
- allOff();
- delay(2*Tshot);
- 
- for(int c=0;c<5;c++){
- shotSingle(1);
- delay(5*Tshot);
- }
- allOff();
- delay(Tshot);
- 
- for(int i=1;i<6;i++){
- postino(max2, (0x10+(i-1)/2), 0xFF); //
- }
- delay(2*Tshot);
- allOff();
- delay(2*Tshot);
- 
- 
- //I
- delay(10*Tcharge);
- for(int c=0;c<7;c++){
- shotSingle(5);
- delay(5*Tshot);
- }
- allOff();
- delay(10*Tcharge);
- 
- //N
- //167
- shotFire(1);
- postino(max2, (0x10), 0x0F);//1
- postino(max2, (0x10+2), 0xF0);//6
- postino(max2, (0x10+3), 0x0F);//7
- 
- delay(2*Tshot);
- allOff();
- delay(2*Tshot);
- //167
- shotFire(1);
- postino(max2, (0x10), 0x0F);//1
- postino(max2, (0x10+2), 0xF0);//6
- postino(max2, (0x10+3), 0x0F);//7
- 
- delay(2*Tshot);
- allOff();
- delay(2*Tshot);
- 
- //157
- postino(max2, (0x10), 0x0F);//1
- postino(max2, (0x10+2), 0x0F);//5
- postino(max2, (0x10+3), 0x0F);//7
- delay(2*Tshot);
- allOff();
- delay(2*Tshot);
- //157
- postino(max2, (0x10), 0x0F);//1
- postino(max2, (0x10+2), 0x0F);//5
- postino(max2, (0x10+3), 0x0F);//7
- delay(2*Tshot);
- allOff();
- delay(2*Tshot);
- 
- 
- 
- //147
- postino(max2, (0x10), 0x0F);//1
- postino(max2, (0x10+1), 0xF0);//4
- postino(max2, (0x10+3), 0x0F);//7
- delay(2*Tshot);
- allOff();
- delay(2*Tshot);
- //147
- postino(max2, (0x10), 0x0F);//1
- postino(max2, (0x10+1), 0xF0);//4
- postino(max2, (0x10+3), 0x0F);//7
- delay(2*Tshot);
- allOff();
- delay(2*Tshot);
- 
- //137
- postino(max2, (0x10), 0x0F);//1
- postino(max2, (0x10+1), 0x0F);//3
- postino(max2, (0x10+3), 0xF0);//7
- delay(2*Tshot);
- allOff();
- delay(2*Tshot);
- //137
- postino(max2, (0x10), 0x0F);//1
- postino(max2, (0x10+1), 0x0F);//3
- postino(max2, (0x10+3), 0xF0);//7
- delay(2*Tshot);
- allOff();
- delay(2*Tshot);
- 
- 
- //127
- postino(max2, (0x10), 0xFF);//1
- postino(max2, (0x10+3), 0x0F);//7
- delay(2*Tshot);
- allOff();
- delay(2*Tshot);
- //127
- postino(max2, (0x10), 0xFF);//1
- postino(max2, (0x10+3), 0x0F);//7
- delay(2*Tshot);
- allOff();
- delay(2*Tshot);
- 
- 
- //L
- delay(10*Tcharge);
- for(int c=0;c<7;c++){
- shotSingle(6);
- delay(5*Tshot);  
- }
- allOff();
- delay(Tshot);
- 
- for(int i=1;i<7;i++){
- postino(max2, (0x10+(i-1)/2), 0xFF); //
- }
- delay(5*Tshot);  
- allOff();
- 
- 
- 
- //A
- delay(10*Tcharge);
- shotSingle(5);
- delay(5*Tshot);
- 
- shotFire(4);
- shotFire(6);
- delay(2*Tshot); 
- allOff();
- delay(2*Tshot); 
- 
- shotFire(3);
- shotFire(7);
- delay(2*Tshot); 
- allOff();
- delay(2*Tshot); 
- 
- 
- postino(max2, (0x10+1), 0xFF);
- postino(max2, (0x10+2), 0xFF);
- delay(2*Tshot); 
- allOff();
- delay(2*Tshot); 
- 
- shotFire(2);
- shotFire(8);
- delay(2*Tshot); 
- allOff();
- delay(2*Tshot); 
- 
- 
- shotFire(1);
- shotFire(9);
- delay(2*Tshot); 
- allOff();
- delay(2*Tshot); 
- 
- 
- //B
- delay(10*Tcharge);
- for(int i=1;i<4;i++){
- postino(max2, (0x10+(i-1)), 0xFF); //
- }
- delay(2*Tshot); 
- allOff();
- delay(2*Tshot); 
- 
- for(int c=0;c<3;c++){
- shotFire(7);
- shotFire(1);
- delay(2*Tshot);
- allOff();
- delay(2*Tshot);
- }
- 
- 
- for(int i=1;i<4;i++){
- postino(max2, (0x10+(i-1)), 0xFF); //
- }
- delay(2*Tshot); 
- allOff();
- delay(2*Tshot); 
- 
- 
- for(int c=0;c<3;c++){
- shotFire(7);
- shotFire(1);
- delay(2*Tshot);
- allOff();
- delay(2*Tshot);
- }
- 
- 
- for(int i=1;i<4;i++){
- postino(max2, (0x10+(i-1)), 0xFF); //
- }
- delay(2*Tshot); 
- allOff();
- delay(2*Tshot); 
- 
- 
- 
- }
- 
- 
- 
- 
- */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+void sinlab(){
+  s();
+  delay(1000);
+  i();
+  delay(1000);
+  n();
+  delay(1000);
+  l();
+  delay(1000);
+  a();
+  delay(1000);
+  b();
+  delay(1000);
+}
+
+int remap(int i){
+  int j=0;
+  if (i==8)  j=10;
+  else if (i==9)  j=13; 
+  else if (i==10)  j=14;
+  else if (i==11) j=15;
+  else if (i==12) j=16;
+  else j=i;
+  return j;
+}
+
+
+void shotBack();
+void shotFront();
 
 
 
