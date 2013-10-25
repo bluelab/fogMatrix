@@ -17,7 +17,7 @@ byte max7 = 0x16;
 
 int intensita = 0xff;   
 
-#define BOXNUM 18  //number of boxes 16
+#define BOXNUM 18  //number of boxes 16
 
 int LEDSarray[BOXNUM];//numers of LED arrays = controller boards
 
@@ -127,9 +127,9 @@ void loop()
    while(Serial.available() > 0)
 
 ////////////////////////from processing use something like:
-//    myPort.write("<");
+//    myPort.write("<"); //ascii 0x3C
 //    myPort.write(val);
-//    myPort.write(">");
+//    myPort.write(">"); //ascii 0x3E
 ////////////////////////  to send the array
 
    {
