@@ -7,8 +7,8 @@
 void postino(byte address, byte reg, byte data);
 
 //2DO transform into array for multi max
-byte max1 = 0x10;      // addressses of max chips
-byte max2 = 0x11;
+byte max2 = 0x6F;      // addressses of max chips
+byte max1 = 0x11;
 byte max3 = 0x12;
 byte max4 = 0x13;      // addressses of max chips
 byte max5 = 0x14;
@@ -25,17 +25,12 @@ int  LEDSON[BOXNUM]; //array for all on
 int  LEDSOFF[BOXNUM]; //array for all off 
 int  LEDSLETTER[BOXNUM]; //array for all off 
 
-//front 8 6 4 
-int LEDSFRONT[BOXNUM];
-
-//back 1 2 3 5 7 9
-int LEDSBACK[BOXNUM];
 int LEDS16[BOXNUM];
 int LEDS712[BOXNUM];
 int LEDS1318[BOXNUM];
 
 //2DO transform into array for multi max 
-byte LEDSstatus[BOXNUM]; //current machine status first 8 values correnspond to the 16 fog rings - second  8 to the motors
+byte LEDSstatusMax2[BOXNUM],LEDSstatusMax1[BOXNUM]; //current machine status first 8 values correnspond to the 16 fog rings - second  8 to the motors
 
 //byte chipdata = 0;
 
@@ -54,46 +49,34 @@ int SERVO[10] = {
   0x3F, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47};
 
 
-
-
 void setup(){
 
   Wire.begin(); // join i2c bus (address optional for master)
-  Serial.begin(115200);
-  for (byte i=max1; i< max5; i++){
-    initMax(i);
-    //    checkMax(i);   //checks with led
-    pinMode(13, OUTPUT);     
-  }
+  Serial.begin(9600);
+
+  initMax(max1);
+  initMax(max2);
   delay(100);
 
   for(int i=0;i<BOXNUM;i++){
     LEDSarray[i]=0x00;
-    LEDSstatus[i]=0x00;
+    LEDSstatusMax2[i]=0x00; 
+    LEDSstatusMax1[i]=0x00;
     LEDS16[i]=0x00;
     LEDS712[i]=0x00;
     LEDS1318[i]=0x00;
   }
   for(int i=0;i<6;i++){
-    LEDS16[remap(i+1)-1]=1;
-    LEDS712[remap(i+1+6)-1]=1;
-    LEDS1318[remap(i+1+12)-1]=1;
-  }
-  for(int i=0;i<BOXNUM;i++){
-    LEDSON[i]=1;
-    LEDSOFF[i]=0;
-    LEDSFRONT[i]=0;
-    LEDSBACK[i]=1;
-  } 
-  //front 8 6 4 
-  LEDSFRONT[8]=1;
-  LEDSFRONT[6]=1;
-  LEDSFRONT[4]=1;
+    // LEDS16[remap(i+1)-1]=1;
+    //  LEDS712[remap(i+1+6)-1]=1;
+    //  LEDS1318[remap(i+1+12)-1]=1;
 
-  //back are inverse than back (so 0 in the same place)
-  LEDSBACK[8]=0;
-  LEDSBACK[6]=0;
-  LEDSBACK[4]=0;
+    LEDS16[i]=1;
+    LEDS712[i+6]=1;
+    LEDS1318[i+12]=1;
+
+  }
+
 
   /////////////////////////////////////////////////////////////
   //servo
@@ -111,69 +94,76 @@ void loop()
   allOff();
   delay(100);
   ///////
-  //shotAll();  
-  sinlab();
+  shotAll();
+ delay(1000); shot(LEDS16);
+ delay(1000); shot(LEDS1318);
+  for(int i=1;i<19;i++){
+   // shotSingle(i);
+  }
+
+
+  // sinlab();
   delay(1000);
   int input = Serial.read();  // read serial 
   int T=150; //ms
-  
-  
-////receiving from processing  
+
+
+  ////receiving from processing  
   bool started, ended;
   int serialIn=0;
   byte YuanBuffer[18];
   int shotbuf[18];
-  
-   while(Serial.available() > 0)
 
-////////////////////////from processing use something like:
-//    myPort.write("<"); //ascii 0x3C
-//    myPort.write(val);
-//    myPort.write(">"); //ascii 0x3E
-////////////////////////  to send the array
+  while(Serial.available() > 0)
 
-   {
-//      char aChar = Serial.read();
-      byte aChar = Serial.read();
-     // if(aChar == '<')
-      if(aChar == 0x3C)
-      {
-         started = true;
-         ended = false;
-      }
-   //   else if(aChar == '>')
-      else if(aChar == 0x3E )
-      {
-         ended = true;
-         break; // Break out of the while loop
-      }
-      else
-      {
-         YuanBuffer[serialIn] = aChar; 
-         serialIn++;
-//         YuanBuffer[serialIn] = '\0'; //a string is a char terminated by \0 so take care if you use a char
-      }
-   }
+    ////////////////////////from processing use something like:
+    //    myPort.write("<"); //ascii 0x3C
+    //    myPort.write(val);
+    //    myPort.write(">"); //ascii 0x3E
+    ////////////////////////  to send the array
 
-   if(started && ended)
-   {
-      // We got a whole slice
-      for(int i=1;i<BOXNUM;i++){
-         shotbuf[i-1]=(int)YuanBuffer[i]; //casting
-        }
-      shot(shotbuf);
-    
-        // Do something else ??? :o
-      serialIn = 0;
-      started = false;
+  {
+    //      char aChar = Serial.read();
+    byte aChar = Serial.read();
+    // if(aChar == '<')
+    if(aChar == 0x3C)
+    {
+      started = true;
       ended = false;
-   }
-   else
-   {
-     // No data, or only some data, received what do we do ?
-   }
-  
-  
+    }
+    //   else if(aChar == '>')
+    else if(aChar == 0x3E )
+    {
+      ended = true;
+      break; // Break out of the while loop
+    }
+    else
+    {
+      YuanBuffer[serialIn] = aChar; 
+      serialIn++;
+      //         YuanBuffer[serialIn] = '\0'; //a string is a char terminated by \0 so take care if you use a char
+    }
+  }
+
+  if(started && ended)
+  {
+    // We got a whole slice
+    for(int i=1;i<BOXNUM;i++){
+      shotbuf[i-1]=(int)YuanBuffer[i]; //casting
+    }
+    shot(shotbuf);
+
+    // Do something else ??? :o
+    serialIn = 0;
+    started = false;
+    ended = false;
+  }
+  else
+  {
+    // No data, or only some data, received what do we do ?
+  }
+
+
   switch (input){
   case 1:  //If processing passes a '1' do case one 
     //shotSingle(1);
@@ -258,66 +248,80 @@ void initMax(byte maxi){
   postino(maxi, 0xe, 0xff);
 }
 
-//blink all "leds" and check serial link
-void checkMax(byte maxi)
-{
-  for (int i = 0x10; i < 0x18; i++){
-    postino(maxi, i, 0x00);
-    delay(100);
-  }
-  delay(100);
-  for (int i = 0x10; i < 0x18; i++){
-    postino(maxi, i, 0xff);
-  }
-  Serial.print("check");
-}
-
 // on and off correnspond to 0 and F for MAX7313 - because of pullup R 
 // these functions takes care of all the logging and book keeping 
 // do no take into account Pauses needed between one shot and the other
 //consider them private not to be used directly
+
+void shotremapped(int i, int j){
+  if (j==0) shotOff(remap(i));
+  else if(j==1) shotFire(remap(i));
+}
 
 void shotpriv(int i, int j){
   if (j==0) shotOff(i);
   else if(j==1) shotFire(i);
 }
 
-void shotFire(int i){    //i always > 0
-  if ((i % 2)>0){ //numeri dispari
-    LEDSstatus[(i-1)/2] = (LEDSstatus[(i-1)/2]  & 0xF0) +0x0F; //1,3,5,7,9... // &0xF0 masks higher bit 
-    if(i>=12){
-      postino(max1, (0x10+(i-1-12)/2), LEDSstatus[(i-1-12)/2]);
+void shotFire(int i){    //i from 1 to 18 !!! 
+  //Serial.println(i);
 
+  if ((i % 2)>0){ //numeri dispari
+    if(i>100){
+      int j=i-100;
+      Serial.println(j);
+      LEDSstatusMax1[(j-1)/2] = (LEDSstatusMax1[(j-1)/2]  & 0xF0) +0x0F; //1,3,5,7,9... // &0xF0 masks higher bit 
+      postino(max1, (0x10+(j-1)/2), LEDSstatusMax1[(j-1)/2]);
     }
     else  {
-      postino(max2, (0x10+(i-1)/2), LEDSstatus[(i-1)/2]); 
-      //  postino(max2, (0x10+(i-1)/2), ((0x00 & 0xF0)+0x0F)); 
+      Serial.println(i);
+      LEDSstatusMax2[(i-1)/2] = (LEDSstatusMax2[(i-1)/2]  & 0xF0) +0x0F; //1,3,5,7,9... // &0xF0 masks higher bit 
+      //OK senza remap//
+      postino(max2, (0x10+(i-1)/2), LEDSstatusMax2[(i-1)/2]); 
     }
 
   }
   else { //numeri pari 
     // postino(max2, (0x10+(i-1)/2), ((0x00 & 0x0F)+0xF0)); 
-    LEDSstatus[(i-1)/2] = (LEDSstatus[(i-1)/2]  & 0x0F) +0xF0;//0,2,4,6,8... // &0x0F masks lower bit
-    if(i>=12){
-            postino(max2, (0x10+(i-1-12)/2), LEDSstatus[(i-1-12)/2]);
-
+    if(i>100){
+      int j =i-100;
+      Serial.println(j);
+      LEDSstatusMax1[(j-1)/2] = (LEDSstatusMax1[(j-1)/2]  & 0x0F) +0xF0;//0,2,4,6,8... // &0x0F masks lower bit
+      postino(max1, (0x10+(j-1)/2), LEDSstatusMax1[(j-1)/2]);
     }
     else{
-      postino(max1, (0x10+(i-1)/2), LEDSstatus[(i-1)/2]);
+      Serial.println(i);
+      LEDSstatusMax2[(i-1)/2] = (LEDSstatusMax2[(i-1)/2]  & 0x0F) +0xF0;//0,2,4,6,8... // &0x0F masks lower bit
+      //ok senza remap//  
+      postino(max2, (0x10+(i-1)/2), LEDSstatusMax2[(i-1)/2]);
     }
   }
 }
 
 void shotOff(int i){  
   if ((i % 2)>0){ //numeri dispari
-    LEDSstatus[(i-1)/2] = (LEDSstatus[(i-1)/2]  | 0x0F ) -0x0F; // |0x0F masks higher bit
-    postino(max2, (0x10+(i-1)/2),  LEDSstatus[(i-1)/2]); //1,3,5,7,9... 
-    //postino(max2, (0x10+(i-1)/2),0x00);//0,2,4,6,8... 
+    if(i>100){
+      int j =i-100;
+      LEDSstatusMax1[(j-1)/2] = (LEDSstatusMax1[(j-1)/2]  | 0x0F ) -0x0F; // |0x0F masks higher bit
+      postino(max1, (0x10+(j-1)/2), LEDSstatusMax1[(j-1)/2]);
+    }
+    else{
+      LEDSstatusMax2[(i-1)/2] = (LEDSstatusMax2[(i-1)/2]  | 0x0F ) -0x0F; // |0x0F masks higher bit
+      postino(max2, (0x10+(i-1)/2), LEDSstatusMax2[(i-1)/2]); //1,3,5,7,9... 
+      //postino(max2, (0x10+(i-1)/2),0x00);//0,2,4,6,8... 
+    }
   }
   else { //numeri pari e 0
-    LEDSstatus[(i-1)/2] = (LEDSstatus[(i-1)/2]   | 0xF0) -0xF0; // |0xF0 masks lower bit
-    postino(max2, (0x10+(i-1)/2),LEDSstatus[(i-1)/2]);//0,2,4,6,8... 
-    // postino(max2, (0x10+(i-1)/2),0x00);//0,2,4,6,8... 
+    if(i>100){
+      int j =i-100;
+      LEDSstatusMax2[(j-1)/2] = (LEDSstatusMax2[(j-1)/2]   | 0xF0) -0xF0; // |0xF0 masks lower bit
+      postino(max1, (0x10+(j-1)/2),LEDSstatusMax1[(j-1)/2]);
+    }
+    else{
+      LEDSstatusMax2[(i-1)/2] = (LEDSstatusMax2[(i-1)/2]   | 0xF0) -0xF0; // |0xF0 masks lower bit
+      postino(max2, (0x10+(i-1)/2),LEDSstatusMax2[(i-1)/2]);//0,2,4,6,8... 
+      // postino(max2, (0x10+(i-1)/2),0x00);//0,2,4,6,8... 
+    }
   }
 }
 
@@ -326,11 +330,11 @@ void shotOff(int i){
 // array contains 0=off 1=on
 void shot(int *array){
   for (int j=0; j<BOXNUM; j++) {
-    shotpriv(j+1,array[j]);
+    shotremapped(j+1,array[j]);
   }
   delay(Tshot);
   for (int j=0; j<BOXNUM; j++) {
-    shotpriv(j+1,0);
+    shotremapped(j+1,0);
   }
   delay(Tshot); //dovrebbe essere Tcharge
 }
@@ -354,14 +358,6 @@ void allOff(){
 
 
 void slice(int dimension,int *slice){//array con 0 e 1 
-  for(int i=0 ; i < dimension/BOXNUM; i++){
-    byte maxi=max1+i;
-    for(int j=0; j<BOXNUM; j++){
-      //    postino(maxi,(0x10)+i,slice(i,j))
-    }
-  }
-  //  postino();
-  delay(Tshot);
 }
 
 void cusp(int T){
@@ -487,13 +483,20 @@ int remap(int i){
   else if (i==10)  j=14;
   else if (i==11) j=15;
   else if (i==12) j=16;
+
+  //MAX2
+  else if (i>12 && i<=18) j=i-12+100; // + numero pari non cambia parita'
   else j=i;
   return j;
 }
 
 
-void shotBack();
-void shotFront();
+
+
+
+
+
+
 
 
 
