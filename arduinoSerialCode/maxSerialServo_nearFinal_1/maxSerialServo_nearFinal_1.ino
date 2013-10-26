@@ -18,7 +18,8 @@ byte max7 = 0x16;
 int intensita = 0xff;   
 
 #define BOXNUM 18  //number of boxes 16
-#define NUMSLICES 8 // number of "slices" = height
+#define NUMSLICES 20 // number of "slices" = height //8 = max independent from serial buffer
+#define DEBUG 0 // if 0 activate serial write
 
 int LEDSarray[BOXNUM];//numers of LED arrays = controller boards
 
@@ -121,11 +122,14 @@ void loop(){
     //    myPort.write("}"); //ascii 0x7D 
     ////////////////////////  to send the array
     //<111000111000111000>
+
     int aChar = Serial.read();
     //////init char "{"
     if(aChar == 0x7B){
       Mstarted = true;
       Mended = false;
+      if(DEBUG)    Serial.println("Mstarted");
+
     }
     ///////row
     if(Mstarted == true){
@@ -135,22 +139,28 @@ void loop(){
         Rstarted = true;
         Rended = false; 
         RserialIn=0;
+        if(DEBUG)        Serial.println("<");
       }
       //   else if(aChar == '>')
       else if(aChar == 0x3E )
       {
         Rended = true;
         RserialIn=0;
+        if(DEBUG)    Serial.println(">");
       }
       ///// boxes values 
       else if(aChar == 48 || aChar == 49)
       {
         YuanBuffer[RserialIn] = aChar; 
-        /*        Serial.print(RserialIn);
-         Serial.print(":"); 
-         Serial.println(aChar);
-         */
+        if(DEBUG){    
+          Serial.print(RserialIn);
+          Serial.print(":"); 
+          Serial.println(aChar);
+        }
         RserialIn++;
+      }
+      else{
+        if(DEBUG)       Serial.println("else char");
       }
       if(Rstarted && Rended)
       {
@@ -159,13 +169,14 @@ void loop(){
         for(int i=0;i<BOXNUM;i++){
           if(YuanBuffer[i] != 0) shotbuf[i][CserialIn%NUMSLICES]=YuanBuffer[i]-'0';
           else shotbuf[i][CserialIn%NUMSLICES]=0;
-         //cleanup
+          //cleanup
           YuanBuffer[i]=0x00;
         }
         //        RserialIn = 0;
         Rstarted = false;
         Rended = false;
         CserialIn++;
+        if(DEBUG)   Serial.println("Rstarted && Rended");
       }
       //@ end matrix
       if(aChar == 0x7D){
@@ -190,6 +201,7 @@ void loop(){
             shotbuf[j][i]=0;          
           }
         }
+        if(DEBUG)      Serial.println("end");
         break;     
       } 
     }
@@ -461,6 +473,8 @@ int remap(int i){
   else j=i;
   return j;
 }
+
+
 
 
 
